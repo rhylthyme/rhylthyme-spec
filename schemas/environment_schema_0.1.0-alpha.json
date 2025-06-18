@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Base Environment Schema",
+  "description": "Base schema for environment catalog files",
+  "type": "object",
+  "required": ["environmentId", "name", "type", "resourceConstraints"],
+  "properties": {
+    "environmentId": {
+      "type": "string",
+      "description": "Unique identifier for the environment",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for the environment"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the environment"
+    },
+    "type": {
+      "type": "string",
+      "description": "Type of environment (e.g., kitchen, laboratory, bakery, airport)",
+      "enum": [
+        "kitchen",
+        "laboratory",
+        "bakery",
+        "airport",
+        "restaurant",
+        "home",
+        "commercial-kitchen",
+        "lab",
+        "research",
+        "biotech",
+        "pharma",
+        "medical",
+        "artisan",
+        "pastry",
+        "aviation",
+        "runway",
+        "terminal",
+        "manufacturing",
+        "warehouse",
+        "office",
+        "hospital",
+        "school",
+        "retail",
+        "farm",
+        "datacenter",
+        "factory",
+        "workshop",
+        "garage",
+        "gym",
+        "studio",
+        "theater",
+        "library",
+        "garden",
+        "greenhouse",
+        "clinic",
+        "spa",
+        "hotel"
+      ]
+    },
+    "actors": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Legacy: Total number of actors (use actorTypes for new environments)"
+    },
+    "actorTypes": {
+      "type": "object",
+      "description": "Definition of different actor types and their counts",
+      "patternProperties": {
+        "^[a-z0-9-]+$": {
+          "type": "object",
+          "required": ["name", "count"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Human-readable name for the actor type"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of actors of this type"
+            },
+            "description": {
+              "type": "string",
+              "description": "Description of the actor type's role"
+            },
+            "qualifications": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "List of qualifications this actor type possesses"
+            }
+          }
+        }
+      }
+    },
+    "resourceConstraints": {
+      "type": "array",
+      "description": "List of resource constraints for this environment",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["task", "maxConcurrent", "description"],
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "Name of the task/resource type"
+          },
+          "maxConcurrent": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum number of concurrent uses of this resource"
+          },
+          "actorsRequired": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Number of actors required for this task"
+          },
+          "qualifiedActorTypes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Actor types qualified to perform this task"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the resource or equipment"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata about the environment"
+    }
+  },
+  "anyOf": [{ "required": ["actors"] }, { "required": ["actorTypes"] }]
+}

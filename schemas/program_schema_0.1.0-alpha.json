@@ -1,0 +1,677 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Real-Time Program Schema",
+  "description": "A schema for describing real-time schedules with tracks, steps, and resource constraints",
+  "type": "object",
+  "anyOf": [
+    {
+      "required": ["programId", "name", "tracks", "resourceConstraints"],
+      "not": {
+        "anyOf": [
+          { "properties": { "environment": { "type": "string" } } },
+          { "properties": { "environmentType": { "type": "string" } } }
+        ]
+      }
+    },
+    {
+      "required": ["programId", "name", "tracks", "environment"],
+      "properties": { "environment": { "type": "string" } }
+    },
+    {
+      "required": ["programId", "name", "tracks", "environmentType"],
+      "properties": { "environmentType": { "type": "string" } }
+    }
+  ],
+  "properties": {
+    "programId": {
+      "type": "string",
+      "description": "Unique identifier for the program"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for the program"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the program"
+    },
+    "version": {
+      "type": "string",
+      "description": "Program version number"
+    },
+    "environment": {
+      "type": "string",
+      "description": "Reference to environment definition file or ID"
+    },
+    "environmentType": {
+      "type": "string",
+      "description": "Type of environment this program is designed for (e.g., 'kitchen', 'laboratory', 'bakery')"
+    },
+    "actors": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Number of actors (e.g., cooks in a kitchen) that limits maxConcurrent for any task without an explicit constraint"
+    },
+    "duration": {
+      "type": "object",
+      "description": "Fixed duration constraint for the entire program",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "seconds"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["fixed"],
+              "description": "Program has a fixed duration"
+            },
+            "seconds": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Total program duration in seconds"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "timeString"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["fixed"],
+              "description": "Program has a fixed duration"
+            },
+            "timeString": {
+              "type": "string",
+              "description": "Total program duration as a time string (e.g., '3h30m', '2h15m30s')"
+            }
+          }
+        }
+      ]
+    },
+    "startTrigger": {
+      "type": "object",
+      "description": "Defines how the program starts",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "time"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["absolute"],
+              "description": "Program starts at a specific time"
+            },
+            "time": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 formatted date-time for program start"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "offsetSeconds"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["offset"],
+              "description": "Program starts after an offset from a reference time"
+            },
+            "offsetSeconds": {
+              "type": ["number", "string"],
+              "description": "Offset in seconds from reference time. Can be a number or a string with time units (e.g., '1m30s', '1h')"
+            },
+            "referenceEvent": {
+              "type": "string",
+              "description": "Optional reference event ID. If not provided, offset is from program creation time"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["manual"],
+              "description": "Program starts when manually triggered"
+            },
+            "triggerName": {
+              "type": "string",
+              "description": "Optional name for the manual trigger"
+            }
+          }
+        }
+      ]
+    },
+    "tracks": {
+      "type": "array",
+      "description": "Parallel execution tracks within the program",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["trackId", "name", "steps"],
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "Unique identifier for the track"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the track"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the track"
+          },
+          "batch_size": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Number of iterations for this track type (e.g., 10 orders of eggs)"
+          },
+          "stagger": {
+            "type": ["number", "string"],
+            "description": "Time delay between each batch instance when batch_size > 1. Can be a number (seconds) or a string with units (e.g., '1m30s', '1h20m')"
+          },
+          "stagger_seconds": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "DEPRECATED: Use 'stagger' instead. Time delay in seconds between each batch instance when batch_size > 1"
+          },
+          "templateId": {
+            "type": "string",
+            "description": "Optional reference to a track template if this track is an instance of a template"
+          },
+          "templateParameters": {
+            "type": "object",
+            "description": "Parameters to customize this track instance if it's based on a template"
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Track priority for auto-planning (lower number = higher priority, default: 100)",
+            "default": 100,
+            "minimum": 1
+          },
+          "steps": {
+            "type": "array",
+            "description": "Sequential steps within this track",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["stepId", "name", "startTrigger"],
+              "properties": {
+                "stepId": {
+                  "type": "string",
+                  "description": "Unique identifier for the step"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Human-readable name for the step"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Detailed description of the step"
+                },
+                "priority": {
+                  "type": "integer",
+                  "description": "Priority for resource allocation (lower number = higher priority, default: 100)",
+                  "default": 100
+                },
+                "flex": {
+                  "type": "object",
+                  "description": "Flexible timing settings for the step",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "description": "Whether this step can be flexibly timed",
+                      "default": false
+                    },
+                    "mode": {
+                      "type": "string",
+                      "enum": ["fill", "max"],
+                      "description": "Flex mode: 'fill' expands to fill gap to next step, 'max' extends to maximum duration",
+                      "default": "fill"
+                    },
+                    "minDuration": {
+                      "type": ["number", "string"],
+                      "minimum": 0,
+                      "description": "Minimum duration for flexible steps. Can be a number (seconds) or a string with time units"
+                    },
+                    "maxDuration": {
+                      "type": ["number", "string"],
+                      "minimum": 0,
+                      "description": "Maximum duration for flexible steps. Can be a number (seconds) or a string with time units"
+                    }
+                  }
+                },
+                "task": {
+                  "type": "string",
+                  "description": "Reference to a resource constraint this step requires"
+                },
+                "tasks": {
+                  "type": "array",
+                  "description": "References to resource constraints this step requires",
+                  "items": {
+                    "type": "string",
+                    "description": "Reference to a resource constraint"
+                  }
+                },
+                "taskResources": {
+                  "type": "array",
+                  "description": "References to resource constraints with fractional usage",
+                  "items": {
+                    "type": "object",
+                    "required": ["name", "fraction"],
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Reference to a resource constraint"
+                      },
+                      "fraction": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1,
+                        "description": "Fraction of the resource used (0.0 to 1.0)"
+                      }
+                    }
+                  }
+                },
+                "codeBlock": {
+                  "type": "object",
+                  "description": "Code to execute when the step starts",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["python", "shell"],
+                      "description": "Type of code to execute"
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "The code to execute"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Description of what the code does"
+                    }
+                  },
+                  "required": ["type", "code"]
+                },
+                "startTrigger": {
+                  "type": "object",
+                  "description": "Defines how the step starts",
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "description": "Multiple start triggers with logical operators",
+                      "required": ["logic", "triggers"],
+                      "properties": {
+                        "logic": {
+                          "type": "string",
+                          "enum": ["all", "any"],
+                          "description": "Logic for multiple triggers: 'all' means ALL triggers must be satisfied, 'any' means ANY ONE trigger can start the step"
+                        },
+                        "triggers": {
+                          "type": "array",
+                          "minItems": 2,
+                          "description": "Array of trigger conditions",
+                          "items": {
+                            "$ref": "#/definitions/singleStartTrigger"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/definitions/singleStartTrigger"
+                    }
+                  ]
+                },
+                "duration": {
+                  "type": "object",
+                  "description": "Defines the duration behavior of the step",
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": ["type", "seconds"],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["fixed"],
+                          "description": "Step has a fixed duration"
+                        },
+                        "seconds": {
+                          "type": ["number", "string"],
+                          "minimum": 0,
+                          "description": "Duration. Can be a number (seconds) or a string with time units (e.g., '30s', '5m', '1h')"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": ["type", "minSeconds", "maxSeconds"],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["variable"],
+                          "description": "Step has a variable duration that can be ended manually"
+                        },
+                        "minSeconds": {
+                          "type": ["number", "string"],
+                          "minimum": 0,
+                          "description": "Minimum duration. Can be a number (seconds) or a string with time units (e.g., '2m', '1h')"
+                        },
+                        "maxSeconds": {
+                          "type": ["number", "string"],
+                          "minimum": 0,
+                          "description": "Maximum duration. Can be a number (seconds) or a string with time units (e.g., '5m', '2h')"
+                        },
+                        "defaultSeconds": {
+                          "type": ["number", "string"],
+                          "minimum": 0,
+                          "description": "Default duration if not manually ended. Can be a number (seconds) or a string with time units (e.g., '3m', '1h30m')"
+                        },
+                        "optimalSeconds": {
+                          "type": ["number", "string"],
+                          "minimum": 0,
+                          "description": "Optimal duration used by the planner for optimization. Can be a number (seconds) or a string with time units (e.g., '2m30s', '1h')"
+                        },
+                        "triggerName": {
+                          "type": "string",
+                          "description": "Optional name for the manual end trigger"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": ["type"],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["indefinite"],
+                          "description": "Step continues until manually ended"
+                        },
+                        "triggerName": {
+                          "type": "string",
+                          "description": "Optional name for the manual end trigger"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "preBuffer": {
+                  "type": "object",
+                  "description": "Optional buffer time before the step starts (setup/preparation time)",
+                  "properties": {
+                    "duration": {
+                      "type": ["number", "string"],
+                      "minimum": 0,
+                      "description": "Buffer duration. Can be a number (seconds) or a string with time units (e.g., '30s', '2m')"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Description of what happens during the pre-buffer (e.g., 'Equipment setup', 'Room preparation')"
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "description": "Resources required during the pre-buffer period",
+                      "items": {
+                        "type": "string",
+                        "description": "Reference to a resource constraint"
+                      }
+                    },
+                    "taskResources": {
+                      "type": "array",
+                      "description": "Resources with fractional usage during the pre-buffer period",
+                      "items": {
+                        "type": "object",
+                        "required": ["name", "fraction"],
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Reference to a resource constraint"
+                          },
+                          "fraction": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Fraction of the resource used (0.0 to 1.0)"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": ["duration"]
+                },
+                "postBuffer": {
+                  "type": "object",
+                  "description": "Optional buffer time after the step completes (cleanup/teardown time)",
+                  "properties": {
+                    "duration": {
+                      "type": ["number", "string"],
+                      "minimum": 0,
+                      "description": "Buffer duration. Can be a number (seconds) or a string with time units (e.g., '30s', '2m')"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Description of what happens during the post-buffer (e.g., 'Equipment cleanup', 'Data backup')"
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "description": "Resources required during the post-buffer period",
+                      "items": {
+                        "type": "string",
+                        "description": "Reference to a resource constraint"
+                      }
+                    },
+                    "taskResources": {
+                      "type": "array",
+                      "description": "Resources with fractional usage during the post-buffer period",
+                      "items": {
+                        "type": "object",
+                        "required": ["name", "fraction"],
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Reference to a resource constraint"
+                          },
+                          "fraction": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Fraction of the resource used (0.0 to 1.0)"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": ["duration"]
+                },
+                "metadata": {
+                  "type": "object",
+                  "description": "Additional custom metadata for the step"
+                },
+                "canAbort": {
+                  "type": "boolean",
+                  "description": "Whether this step can be aborted (default: false)",
+                  "default": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "resourceConstraints": {
+      "type": "array",
+      "description": "Defines resource constraints for task types",
+      "items": {
+        "type": "object",
+        "required": ["task", "maxConcurrent"],
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "Identifier for the task type (e.g., 'oven', 'runway')"
+          },
+          "maxConcurrent": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum number of concurrent steps allowed for this task type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the resource constraint"
+          }
+        }
+      }
+    },
+    "trackTemplates": {
+      "type": "array",
+      "description": "Reusable track templates that can be instantiated multiple times",
+      "items": {
+        "type": "object",
+        "required": ["templateId", "name", "steps"],
+        "properties": {
+          "templateId": {
+            "type": "string",
+            "description": "Unique identifier for the track template"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the track template"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the track template"
+          },
+          "parameterSchema": {
+            "type": "object",
+            "description": "JSON Schema defining the parameters this template accepts"
+          },
+          "steps": {
+            "type": "array",
+            "description": "Step definitions for this template, similar to track steps but may include parameter references"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional custom metadata for the program"
+    }
+  },
+  "definitions": {
+    "singleStartTrigger": {
+      "type": "object",
+      "description": "A single start trigger condition",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "stepId"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["afterStep"],
+              "description": "Step starts immediately after another step ends"
+            },
+            "stepId": {
+              "type": "string",
+              "description": "ID of the step that must complete before this one starts"
+            },
+            "event": {
+              "type": "string",
+              "enum": ["start", "end"],
+              "default": "end",
+              "description": "Whether to trigger after the referenced step's start or end (default: end)"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "stepId", "bufferSeconds"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["afterStepWithBuffer"],
+              "description": "Step starts after another step ends plus a buffer time"
+            },
+            "stepId": {
+              "type": "string",
+              "description": "ID of the step that must complete before this one starts"
+            },
+            "event": {
+              "type": "string",
+              "enum": ["start", "end"],
+              "default": "end",
+              "description": "Whether to trigger after the referenced step's start or end (default: end)"
+            },
+            "bufferSeconds": {
+              "type": ["number", "string"],
+              "minimum": 0,
+              "description": "Buffer time after the referenced step. Can be a number (seconds) or a string with time units (e.g., '30s', '2m')"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["programStart"],
+              "description": "Step starts when the program starts"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "offsetSeconds"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["programStartOffset"],
+              "description": "Step starts after an offset from program start"
+            },
+            "offsetSeconds": {
+              "type": ["number", "string"],
+              "minimum": 0,
+              "description": "Offset from program start. Can be a number (seconds) or a string with time units (e.g., '5m', '1h30m')"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["manual"],
+              "description": "Step starts when manually triggered"
+            },
+            "triggerName": {
+              "type": "string",
+              "description": "Optional name for the manual trigger"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "stepId"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["onAbort"],
+              "description": "Step starts when another step is aborted"
+            },
+            "stepId": {
+              "type": "string",
+              "description": "ID of the step that must be aborted for this one to start"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
