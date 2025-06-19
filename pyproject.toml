@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rhylthyme-spec"
+version = "0.1.0-alpha"
+description = "JSON schemas and specifications for Rhylthyme programs and environments"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Jeremy Leipzig", email = "leipzig@gmail.com"}
+]
+maintainers = [
+    {name = "Jeremy Leipzig", email = "leipzig@gmail.com"}
+]
+keywords = ["json-schema", "specifications", "real-time", "scheduling"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Distributed Computing",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "jsonschema>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/rhylthyme/rhylthyme-spec"
+Repository = "https://github.com/rhylthyme/rhylthyme-spec"
+Documentation = "https://github.com/rhylthyme/rhylthyme-spec#readme"
+"Bug Tracker" = "https://github.com/rhylthyme/rhylthyme-spec/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rhylthyme_spec = ["schemas/*.json"]
