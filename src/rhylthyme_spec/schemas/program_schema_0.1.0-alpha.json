@@ -8,8 +8,8 @@
       "required": ["programId", "name", "tracks", "resourceConstraints"],
       "not": {
         "anyOf": [
-          { "properties": { "environment": { "type": "string" } } },
-          { "properties": { "environmentType": { "type": "string" } } }
+          { "required": ["environment"] },
+          { "required": ["environmentType"] }
         ]
       }
     },
