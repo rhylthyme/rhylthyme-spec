@@ -23,6 +23,11 @@
     }
   ],
   "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Version of the Rhylthyme schema this program conforms to (e.g., '0.1.0')",
+      "default": "0.1.0"
+    },
     "programId": {
       "type": "string",
       "description": "Unique identifier for the program"
@@ -386,12 +391,17 @@
                     },
                     {
                       "type": "object",
-                      "required": ["type"],
+                      "required": ["type", "defaultSeconds"],
                       "properties": {
                         "type": {
                           "type": "string",
                           "enum": ["indefinite"],
                           "description": "Step continues until manually ended"
+                        },
+                        "defaultSeconds": {
+                          "type": ["number", "string"],
+                          "minimum": 0,
+                          "description": "Expected duration for timeline display. Can be a number (seconds) or a string with time units (e.g., '5m', '1h')"
                         },
                         "triggerName": {
                           "type": "string",
