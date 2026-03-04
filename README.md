@@ -1,31 +1,25 @@
-# Rhylthyme Specification (Alpha)
-
-**⚠️ ALPHA RELEASE** - This specification is in early development and may change significantly before the first stable release.
+# Rhylthyme Specification
 
 Standards and schema for a real-time program logistics description markup language.
 
 ## Version Information
 
-- **Current Version**: 0.1.0a1 (Alpha)
-- **Schema Version**: 0.1.0-alpha
-- **Status**: Early development - breaking changes may occur
+- **Current Version**: 0.1.0
+- **Schema Version**: 0.1.0
 
 ## Overview
 
 Rhylthyme is a JSON-based markup language for describing real-time programs that coordinate multiple parallel tracks of work with resource constraints, timing dependencies, and flexible execution patterns. It's designed for scenarios like restaurant kitchens, laboratory workflows, manufacturing processes, and any situation requiring coordinated real-time execution.
 
-## Alpha Release Notes
+## Features
 
-This alpha release includes:
-- ✅ Basic program structure with tracks and steps
-- ✅ Simplified "on" trigger syntax
-- ✅ Resource constraints
-- ✅ Variable and fixed duration types
-- ✅ Batch processing with staggering
-- 🔄 Environment integration (in progress)
-- 🔄 Advanced validation rules (in progress)
-- ❌ Resource specifications (planned)
-- ❌ Environment schemas (planned)
+- Basic program structure with tracks and steps
+- Simplified "on" trigger syntax
+- Resource constraints
+- Variable and fixed duration types
+- Batch processing with staggering
+- Environment integration
+- Manual triggers and indefinite durations
 
 ## Schema Structure
 
@@ -50,7 +44,7 @@ The Rhylthyme schema defines programs as JSON objects with the following key com
   "programId": "restaurant-breakfast",
   "name": "Restaurant Breakfast Service",
   "description": "Professional restaurant breakfast service workflow with coordinated cooking and plating",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0",
   "environmentType": "kitchen",
   "actors": 2,
   "startTrigger": {
@@ -337,7 +331,7 @@ Programs can reference environment definitions that specify available resources 
 {
   "programId": "restaurant-breakfast",
   "name": "Restaurant Breakfast Service",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0",
   "environmentType": "kitchen",
   "environment": "restaurant-standard.json"
 }
@@ -360,7 +354,7 @@ The schema enforces:
 {
   "programId": "simple-cooking",
   "name": "Simple Cooking",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0",
   "tracks": [
     {
       "trackId": "main",
@@ -394,7 +388,7 @@ The schema enforces:
 {
   "programId": "breakfast-service",
   "name": "Breakfast Service",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0",
   "actors": 3,
   "tracks": [
     {
@@ -492,58 +486,17 @@ The schema enforces:
 
 ## Schema Files
 
-- `schemas/program_schema_0.1.0-alpha.json` - Main program schema (Alpha version)
-- `schemas/program_schema.json` - Latest program schema (symlink to alpha version)
-- `schemas/environment_schema.json` - Environment definitions (coming soon)
-- `schemas/resource_schema.json` - Resource specifications (coming soon)
-
-## Migration Guide
-
-### From Pre-Alpha to Alpha (0.1.0a1)
-
-1. **Add version field** to all programs:
-   ```json
-   {
-     "version": "0.1.0-alpha"
-   }
-   ```
-
-2. **Update trigger syntax** (optional but recommended):
-   - Old: `{"type": "afterStep", "stepId": "step-id"}`
-   - New: `{"on": "step-id"}`
-
-3. **Schema validation** now requires version field
-
-## Roadmap
-
-### Alpha Phase (Current)
-- [x] Basic program structure
-- [x] Simplified trigger syntax
-- [x] Resource constraints
-- [ ] Environment schemas
-- [ ] Advanced validation
-
-### Beta Phase (Planned)
-- [ ] Resource specifications
-- [ ] Template system
-- [ ] Advanced planning algorithms
-- [ ] Performance optimizations
-
-### 1.0 Release (Planned)
-- [ ] Stable API
-- [ ] Complete documentation
-- [ ] Migration tools
-- [ ] Ecosystem tools
+- `schemas/program_schema_0.1.0-alpha.json` - Program schema
+- `schemas/environment_schema_0.1.0-alpha.json` - Environment schema
 
 ## Contributing
 
-This is an alpha release. We welcome feedback and contributions, but please note that breaking changes may occur. Please:
+We welcome feedback and contributions. Please:
 
 1. Test thoroughly with your use cases
 2. Report issues with detailed examples
 3. Suggest improvements with concrete proposals
-4. Be prepared for schema changes
 
 ## License
 
-Apache License 2.0 
+Apache License 2.0
