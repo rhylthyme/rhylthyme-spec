@@ -20,7 +20,7 @@ def get_schema_path(schema_name):
 # Convenience functions for accessing schemas
 def get_program_schema_path():
     """Get the path to the program schema."""
-    return get_schema_path('program_schema_0.1.0-alpha.json')
+    return get_schema_path('program_schema_0.2.0-alpha.json')
 
 def get_environment_schema_path():
     """Get the path to the environment schema."""

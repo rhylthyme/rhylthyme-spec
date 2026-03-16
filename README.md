@@ -486,7 +486,7 @@ The schema enforces:
 
 ## Schema Files
 
-- `schemas/program_schema_0.1.0-alpha.json` - Program schema
+- `schemas/program_schema_0.2.0-alpha.json` - Program schema
 - `schemas/environment_schema_0.1.0-alpha.json` - Environment schema
 
 ## Contributing
