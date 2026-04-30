@@ -150,6 +150,21 @@
               "description": "Optional name for the manual trigger"
             }
           }
+        },
+        {
+          "type": "object",
+          "required": ["type", "time"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["startTime"],
+              "description": "Program is scheduled for a specific time of day (manually triggered, with time-of-day labels)"
+            },
+            "time": {
+              "type": "string",
+              "description": "Time of day in 24h (HH:MM) or 12h (h:MM AM/PM) format, e.g. '14:30' or '2:30 PM'"
+            }
+          }
         }
       ]
     },
@@ -619,7 +634,14 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Additional custom metadata for the program"
+      "description": "Additional custom metadata for the program",
+      "properties": {
+        "thumbnail": {
+          "type": "string",
+          "format": "uri-reference",
+          "description": "URL of the program's hero image. May be an absolute URL (e.g. Supabase Storage public URL or external source like TheMealDB) or a relative reference."
+        }
+      }
     }
   },
   "definitions": {
