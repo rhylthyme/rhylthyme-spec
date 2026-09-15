@@ -10,12 +10,12 @@ __author__ = "Rhylthyme Team"
 __description__ = "JSON schemas and specifications for Rhylthyme programs and environments"
 
 import os
-import pkg_resources
+from importlib import resources as _resources
 
 # Get the path to the schemas directory
 def get_schema_path(schema_name):
     """Get the full path to a schema file."""
-    return pkg_resources.resource_filename('rhylthyme_spec', f'schemas/{schema_name}')
+    return str(_resources.files('rhylthyme_spec') / 'schemas' / schema_name)
 
 # Program schema versions shipped in this package, oldest first.
 PROGRAM_SCHEMA_VERSIONS = ("0.2.0-alpha", "0.3.0-alpha")
