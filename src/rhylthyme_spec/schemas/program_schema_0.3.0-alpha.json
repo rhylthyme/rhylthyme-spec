@@ -26,8 +26,8 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "description": "Version of the Rhylthyme schema this program conforms to (e.g., '0.1.0')",
-      "default": "0.2.0"
+      "description": "Version of the Rhylthyme schema this program conforms to (e.g., '0.3.0-alpha'). Programs declaring '0.1.0', '0.2.0' or '0.2.0-alpha' remain valid against this schema; 'instances' on step-referencing triggers requires '0.3.0-alpha'",
+      "default": "0.3.0-alpha"
     },
     "programId": {
       "type": "string",
@@ -379,6 +379,9 @@
                           "minimum": 0,
                           "$comment": "time:numericDuration — exact extent of the time:Duration",
                           "description": "Duration. Can be a number (seconds) or a string with time units (e.g., '30s', '5m', '1h')"
+                        },
+                        "calibratedFrom": {
+                          "$ref": "#/definitions/calibratedFrom"
                         }
                       }
                     },
@@ -415,6 +418,9 @@
                         "triggerName": {
                           "type": "string",
                           "description": "Optional name for the manual end trigger"
+                        },
+                        "calibratedFrom": {
+                          "$ref": "#/definitions/calibratedFrom"
                         }
                       }
                     },
@@ -436,6 +442,9 @@
                         "triggerName": {
                           "type": "string",
                           "description": "Optional name for the manual end trigger"
+                        },
+                        "calibratedFrom": {
+                          "$ref": "#/definitions/calibratedFrom"
                         }
                       }
                     }
@@ -640,11 +649,78 @@
           "type": "string",
           "format": "uri-reference",
           "description": "URL of the program's hero image. May be an absolute URL (e.g. Supabase Storage public URL or external source like TheMealDB) or a relative reference."
+        },
+        "offsetsUse": {
+          "type": "string",
+          "enum": ["planned", "predicted"],
+          "default": "planned",
+          "description": "EXPERIMENTAL. Which duration a runtime resolves a NEGATIVE offset against when the step it is anchored on has not finished yet ('peel the potatoes 45 min before the roast is done'). 'planned' (the default) projects the anchor's end from the author's own number — its defaultSeconds, or its duration when it is fixed. 'predicted' lets the runtime project it from run history instead, but only for an indefinite anchor, only when a prediction exists for it, and only when that prediction is sharper than the guess (its 80% interval is narrower than defaultSeconds); otherwise the planned number is used unchanged. Nothing else in the program is affected: every other trigger, and the whole plan the editor and analyze_schedule show, is computed from the authored durations.",
+          "$comment": "The one place where history changes run-time behaviour (PRD prd-execution-history-duration-prediction \u00a77, plan Phase 7). Kept behind a flag until held-out evaluation (`rhylthyme runs evaluate`) shows prediction beats the guess for the step types in question; a run record says which numbers were used in context.offsetsUse and, per gated step, predictedAnchorSeconds."
+        },
+        "varianceFactors": {
+          "type": "array",
+          "description": "Author-declared variables that plausibly explain how long this program's steps take: turkey weight, oven type, sample count. Runtimes prompt for them once at run start (skippable) and store the answers in a run record's context.userTags, where calibration and prediction can condition on them.",
+          "$comment": "These are the predictor variables in Badosa's sense (Badosa et al. 2019, doi:10.1007/s10766-018-0600-z, \u00a73): the job parameters and data characteristics a history-based predictor regresses actual duration on, selected by correlation with the observed outcome. Declaring a factor does not make it predictive; the inferentiality report (`rhylthyme runs report`) decides that from recorded runs.",
+          "items": {
+            "type": "object",
+            "required": ["key", "type"],
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Identifier the answer is stored under in a run record's context.userTags",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "Human-readable prompt shown by the runtimes, e.g. 'Turkey weight (kg)'"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["number", "integer", "enum", "string"],
+                "description": "Value domain: number and integer are numeric predictors; enum is one of `values` (one-hot encoded by a predictor); string is recorded but not modelled"
+              },
+              "values": {
+                "type": "array",
+                "description": "Allowed values; required when type is enum and ignored otherwise",
+                "items": { "type": "string" },
+                "minItems": 1
+              },
+              "unit": {
+                "type": "string",
+                "description": "Unit the numeric value is given in, for display only, e.g. 'kg', 'samples'"
+              }
+            },
+            "if": { "properties": { "type": { "const": "enum" } }, "required": ["type"] },
+            "then": { "required": ["values"] }
+          }
         }
       }
     }
   },
   "definitions": {
+    "calibratedFrom": {
+      "type": "object",
+      "$comment": "Provenance of a duration proposed from execution history by `rhylthyme calibrate` and accepted by the author (execution-history PRD §6). Calibration itself never writes; this block is written only on acceptance, so a reader can tell a measured number from a guess. `programVersion` is the run records' programVersion — the plan the measurements were taken against — not necessarily the plan that now carries them.",
+      "description": "Provenance of a duration calibrated from recorded runs",
+      "required": ["runs", "asOf"],
+      "properties": {
+        "runs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of usable measurements the value was computed from"
+        },
+        "asOf": {
+          "type": "string",
+          "description": "When the proposal was accepted, ISO 8601 (e.g. '2026-09-14T12:00:00Z')"
+        },
+        "programVersion": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "Canonical hash of the program the runs were measured against (the run record's programVersion)"
+        }
+      }
+    },
     "replicates": {
       "type": "object",
       "$comment": "Generates multiple time:ProperInterval instances. mode=parallel: all share the same time:hasBeginning (time:intervalStarts). mode=stagger: successive beginnings offset by a time:Duration (time:intervalAfter). mode=serial: each time:intervalMetBy its predecessor",
@@ -664,6 +740,12 @@
         "delay": {
           "type": ["number", "string"],
           "description": "Delay between starts for stagger mode. Can be a number (seconds) or a string with time units (e.g., '1m30s', '1h')"
+        },
+        "maxInFlight": {
+          "type": "integer",
+          "minimum": 1,
+          "$comment": "Bounds the number of time:ProperIntervals, each spanning from an instance's time:hasBeginning to the latest time:hasEnd among its paired 'each' descendants, that may time:intervalOverlaps any given time:Instant. Unlike resourceConstraints.maxConcurrent, which bounds occupancy of one task at one instant, this bounds a chain of tasks across time",
+          "description": "Maximum number of instances that may be in flight at once, i.e. started but not yet finished in every instances:\"each\" descendant (the rejoin point). Instance i + maxInFlight cannot start before instance i leaves flight. Must be <= count; omit for unbounded (the pre-0.3.0 behaviour)"
         }
       },
       "required": ["count"]
@@ -701,6 +783,13 @@
             "choiceId": {
               "type": "string",
               "description": "If the referenced step has a 'choice' property, this step only executes when the user selects the matching choiceId. Steps without choiceId always execute regardless of the choice."
+            },
+            "instances": {
+              "type": "string",
+              "enum": ["each", "all", "any"],
+              "default": "all",
+              "$comment": "Only meaningful when stepId is a replicated step (or a step already instantiated per instance via 'each'). all: time:intervalAfter the latest time:hasEnd among the instances (a barrier; the default, identical to the implicit 0.2.0 join). each: this step is itself instantiated once per instance, and instance i is time:intervalMetBy instance i of the referenced step (time:intervalAfter with offsetSeconds > 0; event=start anchors on that instance's time:hasBeginning). any: time:intervalAfter the earliest time:hasEnd among the instances",
+              "description": "How a reference to a replicated step fans in (schema 0.3.0-alpha): 'all' (default) waits for every instance to end; 'each' replicates this step once per instance and pairs instance i with instance i, transitively through further 'each' steps; 'any' starts after the first instance ends. Invalid on a step that is not replicated"
             }
           }
         },
@@ -728,6 +817,13 @@
               "type": ["number", "string"],
               "minimum": 0,
               "description": "Buffer time after the referenced step. Can be a number (seconds) or a string with time units (e.g., '30s', '2m')"
+            },
+            "instances": {
+              "type": "string",
+              "enum": ["each", "all", "any"],
+              "default": "all",
+              "$comment": "Only meaningful when stepId is a replicated step (or a step already instantiated per instance via 'each'). all: time:intervalAfter the latest time:hasEnd among the instances (a barrier; the default, identical to the implicit 0.2.0 join). each: this step is itself instantiated once per instance, and instance i is time:intervalMetBy instance i of the referenced step (time:intervalAfter, separated by the bufferSeconds time:Duration; event=start anchors on that instance's time:hasBeginning). any: time:intervalAfter the earliest time:hasEnd among the instances",
+              "description": "How a reference to a replicated step fans in (schema 0.3.0-alpha): 'all' (default) waits for every instance to end; 'each' replicates this step once per instance and pairs instance i with instance i, transitively through further 'each' steps; 'any' starts after the first instance ends. Invalid on a step that is not replicated"
             }
           }
         },

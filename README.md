@@ -5,7 +5,7 @@ Standards and schema for a real-time program logistics description markup langua
 ## Version Information
 
 - **Current Version**: 0.1.0
-- **Schema Version**: 0.1.0
+- **Program Schema Version**: 0.3.0-alpha (0.2.0-alpha still shipped; see [CHANGELOG](CHANGELOG.md))
 
 ## Overview
 
@@ -20,6 +20,7 @@ Rhylthyme is a JSON-based markup language for describing real-time programs that
 - Batch processing with staggering
 - Environment integration
 - Manual triggers and indefinite durations
+- Step replicates with per-instance triggers (`instances: "each" | "all" | "any"`) and in-flight limits (`replicates.maxInFlight`), schema 0.3.0-alpha
 
 ## Schema Structure
 
@@ -486,8 +487,63 @@ The schema enforces:
 
 ## Schema Files
 
-- `schemas/program_schema_0.2.0-alpha.json` - Program schema
+- `schemas/program_schema_0.3.0-alpha.json` - Program schema (current; adds `instances` on step-referencing triggers and `maxInFlight` on step-level `replicates`)
+- `schemas/program_schema_0.2.0-alpha.json` - Program schema (previous; still accepted)
 - `schemas/environment_schema_0.1.0-alpha.json` - Environment schema
+- `schemas/runs_schema_0.1.0-alpha.json` - Run record schema (execution history; `get_runs_schema_path()`)
+
+From Python:
+
+```python
+from rhylthyme_spec import get_program_schema_path, PROGRAM_SCHEMA_VERSIONS
+
+get_program_schema_path()               # 0.2.0-alpha (default, unchanged)
+get_program_schema_path("0.3.0-alpha")  # current
+PROGRAM_SCHEMA_VERSIONS                 # ("0.2.0-alpha", "0.3.0-alpha")
+```
+
+### Per-instance triggers (0.3.0-alpha)
+
+When a trigger references a replicated step it may say how it fans in:
+
+```json
+{"type": "afterStep", "stepId": "bake", "instances": "each"}
+```
+
+`"all"` (default) waits for every instance — the barrier that `0.2.0`
+programs already get implicitly; `"each"` replicates the referencing step
+once per instance and pairs instance *i* with instance *i*, transitively;
+`"any"` starts after the first instance ends. Each value carries an OWL-Time
+`$comment` in the schema. Expansion rewrites all three into `0.2.0`
+constructs, so `0.2.0` programs validate unchanged and resolve to identical
+times.
+
+### In-flight limits (0.3.0-alpha)
+
+Step-level `replicates` may cap how many instances are between the step and
+its rejoin point:
+
+```json
+"replicates": {"count": 3, "mode": "serial", "maxInFlight": 2}
+```
+
+An instance is in flight from its own start until it has ended in every
+`instances: "each"` descendant. `maxInFlight: k` holds instance *i + k* until
+instance *i* leaves flight, so three trays through one oven onto a rack that
+holds two never strand a hot tray. It is not
+`resourceConstraints[].maxConcurrent`: that bounds one task at one instant,
+while `maxInFlight` bounds a chain of tasks across time. Expansion rewrites it
+into an ordinary `compound{all}` trigger tagged `_synthetic: "inFlight"`.
+
+## Run Records
+
+A run record is written by a runtime after a program has been executed (`schemas/runs_schema_0.1.0-alpha.json`, `get_runs_schema_path()`). It is a separate document from the program so history never rewrites the plan: `runId`, `programId`, `programVersion` (`sha256:` of the program's canonical JSON), `runtime {kind, version, clockMode, speed}`, `environmentId`, `startedAt`, `endedAt`, `outcome` (`completed | aborted | abandoned`), `context` (program metadata plus `userTags`), and one `steps[]` entry per expanded step with `planned {start, end, durationType, ...}` frozen at run start, `actual {start, end}`, `endedBy` (`executor | timer | trigger | abort`), `triggerFiredAt`, `waitedOn`, `pausedSeconds` and optional `notes`. All step times are seconds from `startedAt`.
+
+## Tests
+
+```bash
+python -m pytest -q tests/
+```
 
 ## Contributing
 
