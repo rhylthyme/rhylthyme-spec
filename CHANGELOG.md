@@ -5,6 +5,23 @@ here. Schema files are never edited in place once shipped; a new version is a
 new file, byte-copied to `rhylthyme-server/static/schema/` and
 `rhylthyme-mcp/static/schema/` (checked by `tools/check_mirrors.sh`).
 
+## Package 0.2.1-alpha - 2026-09-24: galago instrument steps
+
+An additive amendment to shipped schema files, made in place as an exception
+to the rule above: every addition is optional, so no document that was valid
+before becomes invalid, and readers that ignore the new fields are unaffected.
+
+### Added
+- Program schemas 0.2.0-alpha and 0.3.0-alpha: optional step `instrument`
+  `{tool, command, params?, toolType?, timeoutSeconds?}`, a galago-tools
+  command that the runner (`rhylthyme run --workcell`, via rhylthyme-galago)
+  sends when the step starts; the step ends when the instrument replies.
+- Runs schema 0.1.0-alpha: `endedBy` values `instrument` (the instrument
+  reported its command finished) and `skipped` (the command failed and the
+  operator marked the step done); optional step `instrument`
+  `{tool, command, replies: [{attempt, at, code, errorMessage?, metadata?}]}`.
+  Tool addresses are never recorded.
+
 ## Runs schema 0.1.0-alpha - 2026-09-13
 
 ### Added
