@@ -190,8 +190,8 @@
         },
         "endedBy": {
           "type": "string",
-          "enum": ["executor", "timer", "trigger", "abort"],
-          "description": "What ended the step: executor (a person marked it done — the only informative case for variable and indefinite steps), timer (its planned duration expired), trigger (another step's event ended it), abort (it was aborted)"
+          "enum": ["executor", "timer", "trigger", "abort", "instrument", "skipped"],
+          "description": "What ended the step: executor (a person marked it done — the only informative case for variable and indefinite steps), timer (its planned duration expired), trigger (another step's event ended it), abort (it was aborted), instrument (a galago instrument reported its command finished), skipped (its instrument command failed and the operator marked it done)"
         },
         "triggerFiredAt": {
           "$ref": "#/definitions/seconds",
