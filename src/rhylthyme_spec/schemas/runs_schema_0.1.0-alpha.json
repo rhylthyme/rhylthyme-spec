@@ -218,6 +218,31 @@
           "minimum": 0,
           "$comment": "Present only in runs with context.offsetsUse == \"predicted\" whose trigger actually used a prediction; its absence means the author's own number was used, which is also the only possibility for a run with offsetsUse \"planned\".",
           "description": "For a step whose start trigger carries a negative offsetSeconds: the predicted duration, in seconds, that was used to project the anchor step's end instead of the anchor's authored defaultSeconds"
+        },
+        "instrument": {
+          "type": "object",
+          "description": "For a step with a galago instrument command: the tool, the command, and every reply, one per attempt (retries included). Tool addresses are never recorded",
+          "additionalProperties": false,
+          "required": ["tool", "command", "replies"],
+          "properties": {
+            "tool": { "type": "string", "description": "Workcell tool name, as in the program" },
+            "command": { "type": "string", "description": "galago command name" },
+            "replies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["attempt", "at", "code"],
+                "properties": {
+                  "attempt": { "type": "integer", "minimum": 1 },
+                  "at": { "$ref": "#/definitions/seconds", "description": "Seconds from startedAt at which the reply arrived" },
+                  "code": { "type": "string", "description": "galago ResponseCode name (SUCCESS, DRIVER_ERROR, ...) or TIMEOUT, UNREACHABLE, NOT_SENT" },
+                  "errorMessage": { "type": "string" },
+                  "metadata": { "type": "object", "description": "Data the tool returned with its reply (e.g. plate reader values)" }
+                }
+              }
+            }
+          }
         }
       },
       "if": {
