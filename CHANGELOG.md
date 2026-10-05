@@ -5,6 +5,32 @@ here. Schema files are never edited in place once shipped; a new version is a
 new file, byte-copied to `rhylthyme-server/static/schema/` and
 `rhylthyme-mcp/static/schema/` (checked by `tools/check_mirrors.sh`).
 
+## Package 0.2.2-alpha - 2026-10-05: instrument phase actions, any driver
+
+Another additive amendment to the shipped program and runs schemas, made in
+place on the same terms as 0.2.1-alpha: every addition is optional, so every
+document that was valid stays valid.
+
+### Added
+- Program schemas 0.2.0-alpha and 0.3.0-alpha: `instrument` moves to
+  `definitions/instrument` and gains phase actions, each
+  `{command, params?, tool?, timeoutSeconds?}` (`definitions/instrumentAction`):
+  `start` (sent in order when the step starts), `until` (one call whose reply
+  ends the step, instead of `command`), `end` (sent in order when the step
+  ends, however it ends) and `onAbort` (sent if the step fails or the run is
+  aborted, instead of the drivers' default safe stops). `command` and
+  `until` are exclusive; a step needs at least one of `command`, `until`,
+  `start` or `end`. A step with only `start`/`end` runs on its own duration.
+- Runs schema 0.1.0-alpha: an instrument reply may carry `phase`
+  (`start | call | until | end | onAbort | pause | resume`), `tool` and
+  `command`; the step's `command` is empty when it has only start/end
+  actions.
+
+### Changed
+- Wording is driver-neutral: a workcell maps each tool to galago-tools or
+  LabMCP (rhylthyme-labmcp). `toolType` may name a LabMCP server package
+  (`labmcp-ika`) as well as a galago tool type.
+
 ## Package 0.2.1-alpha - 2026-09-24: galago instrument steps
 
 An additive amendment to shipped schema files, made in place as an exception
