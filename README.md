@@ -21,6 +21,7 @@ Rhylthyme is a JSON-based markup language for describing real-time programs that
 - Environment integration
 - Manual triggers and indefinite durations
 - Step replicates with per-instance triggers (`instances: "each" | "all" | "any"`) and in-flight limits (`replicates.maxInFlight`), schema 0.3.0-alpha
+- Step alerts (`alerts`): reminders anchored to a step's start or end, package 0.2.3-alpha, both program schemas
 
 ## Schema Structure
 
@@ -170,6 +171,7 @@ Steps are the individual work units within a track. They define what work is don
 - **`duration`** (required): How long the step takes
 - **`resources`**: Array of required resources
 - **`flex`**: Whether this step can expand to fill available time
+- **`alerts`**: Reminders shown to the person running the program (see [Step alerts](#step-alerts-023-alpha))
 
 ### Trigger Types
 
@@ -534,6 +536,34 @@ holds two never strand a hot tray. It is not
 `resourceConstraints[].maxConcurrent`: that bounds one task at one instant,
 while `maxInFlight` bounds a chain of tasks across time. Expansion rewrites it
 into an ordinary `compound{all}` trigger tagged `_synthetic: "inFlight"`.
+
+### Step alerts (0.2.3-alpha)
+
+A step may carry `alerts`, each anchored to the step's `start` or `end` and
+shifted by a signed `offsetSeconds` (a number or a time string such as
+`"-2m"`; default 0):
+
+```json
+"alerts": [
+  {"event": "end", "offsetSeconds": "-2m", "message": "Get the tray ready"},
+  {"event": "end", "level": "alarm"}
+]
+```
+
+`message` (1-200 characters) is optional; runners show a default such as
+"Ends in 2 min". `level` is `notice` (default) or `alarm`, which native apps
+may ring as a device alarm. In OWL-Time terms an alert is a `time:Instant` at
+the `time:hasBeginning` or `time:hasEnd` of the step's `time:ProperInterval`,
+shifted by a `time:Duration`. Alerts never reference another step, and
+replicate expansion copies them onto every instance. The amendment is additive
+to both `0.2.0-alpha` and `0.3.0-alpha`: every previously valid program stays
+valid.
+
+Some alerts cannot be placed in advance and never fire; the validators report
+`W_ALERT_BEFORE_MANUAL_START`, `W_ALERT_BEFORE_INDEFINITE_END`,
+`W_ALERT_BEFORE_PROGRAM_START`, and the error `E_ALERT_BAD_OFFSET` for an
+unreadable offset. User documentation:
+[Alerts and Notifications](https://docs.rhylthyme.com/web-app/alerts/).
 
 ## Run Records
 
