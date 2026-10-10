@@ -5,6 +5,25 @@ here. Schema files are never edited in place once shipped; a new version is a
 new file, byte-copied to `rhylthyme-server/static/schema/` and
 `rhylthyme-mcp/static/schema/` (checked by `tools/check_mirrors.sh`).
 
+## Package 0.2.3-alpha - 2026-10-10: step alerts
+
+A third additive amendment to the shipped program schemas, made in place on
+the same terms as 0.2.1-alpha: the new property is optional, so every
+document that was valid stays valid (rhylthyme/rhylthyme-spec#2, item 3).
+
+### Added
+- Program schemas 0.2.0-alpha and 0.3.0-alpha: optional step `alerts`, an
+  array (at least one) of `definitions/alert`
+  `{event, offsetSeconds?, message?, level?}`: `event` is `start | end` of
+  the step itself, `offsetSeconds` a signed number or time string relative to
+  it (`"-2m"` = two minutes before; default 0), `message` plain text of 1-200
+  characters (the runner derives one when it is absent) and `level`
+  `notice | alarm` (default `notice`; `alarm` may escalate to a device alarm
+  where the person enabled alarms). Alerts are self-anchored, so replicate
+  expansion copies them onto every instance. A before-start alert on a manual
+  step and a before-end alert on an indefinite step cannot be projected and
+  never fire; validators warn about both.
+
 ## Package 0.2.2-alpha - 2026-10-05: instrument phase actions, any driver
 
 Another additive amendment to the shipped program and runs schemas, made in

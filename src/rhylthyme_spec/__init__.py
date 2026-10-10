@@ -5,7 +5,7 @@ Rhylthyme Specifications Package
 This package provides JSON schemas and specifications for Rhylthyme programs and environments.
 """
 
-__version__ = "0.2.2-alpha"
+__version__ = "0.2.3-alpha"
 __author__ = "Rhylthyme Team"
 __description__ = "JSON schemas and specifications for Rhylthyme programs and environments"
 

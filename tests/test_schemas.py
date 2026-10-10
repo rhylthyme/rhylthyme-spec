@@ -75,6 +75,75 @@ def test_program_schema_rejects_program_without_tracks():
     assert _errors(validator, {"programId": "x", "name": "x"}) != []
 
 
+# ------------------------------------------------------------- step alerts
+
+PROGRAM_SCHEMAS = ["program_schema_0.2.0-alpha.json", "program_schema_0.3.0-alpha.json"]
+
+ALERT_PROGRAM = {
+    "programId": "alerts",
+    "name": "Alerts",
+    "resourceConstraints": [],
+    "tracks": [
+        {
+            "trackId": "t",
+            "name": "T",
+            "steps": [
+                {
+                    "stepId": "bake",
+                    "name": "Bake",
+                    "startTrigger": {"type": "programStart"},
+                    "duration": {"type": "fixed", "seconds": 600},
+                    "alerts": [
+                        {"event": "end", "offsetSeconds": "-2m", "message": "Nearly done"},
+                        {"event": "start"},
+                        {"event": "end", "offsetSeconds": 0, "level": "alarm"},
+                        {"event": "end", "offsetSeconds": "1h30m", "level": "notice"},
+                    ],
+                }
+            ],
+        }
+    ],
+}
+
+
+def _alert_program(alert):
+    program = json.loads(json.dumps(ALERT_PROGRAM))
+    program["tracks"][0]["steps"][0]["alerts"] = [alert]
+    return program
+
+
+@pytest.mark.parametrize("schema", PROGRAM_SCHEMAS)
+def test_program_schemas_accept_step_alerts(schema):
+    validator = _validator(os.path.join(SCHEMAS_DIR, schema))
+    assert _errors(validator, ALERT_PROGRAM) == []
+
+
+@pytest.mark.parametrize("schema", PROGRAM_SCHEMAS)
+@pytest.mark.parametrize(
+    "alert",
+    [
+        {"event": "middle"},
+        {"event": "end", "level": "siren"},
+        {"event": "end", "sound": "chime"},
+        {"event": "start", "message": ""},
+        {"event": "start", "message": "x" * 201},
+        {"offsetSeconds": -60},
+        {"event": "end", "offsetSeconds": True},
+    ],
+)
+def test_program_schemas_reject_bad_alerts(schema, alert):
+    validator = _validator(os.path.join(SCHEMAS_DIR, schema))
+    assert _errors(validator, _alert_program(alert)) != []
+
+
+@pytest.mark.parametrize("schema", PROGRAM_SCHEMAS)
+def test_program_schemas_reject_empty_alerts(schema):
+    validator = _validator(os.path.join(SCHEMAS_DIR, schema))
+    program = json.loads(json.dumps(ALERT_PROGRAM))
+    program["tracks"][0]["steps"][0]["alerts"] = []
+    assert _errors(validator, program) != []
+
+
 # --------------------------------------------------------------- environment
 
 
