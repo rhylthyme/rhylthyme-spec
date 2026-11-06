@@ -3,7 +3,9 @@
 All notable changes to the Rhylthyme specification package are documented
 here. Schema files are never edited in place once shipped; a new version is a
 new file, byte-copied to `rhylthyme-server/static/schema/` and
-`rhylthyme-mcp/static/schema/` (checked by `tools/check_mirrors.sh`).
+`rhylthyme-mcp/static/schema/` (checked by `tools/check_mirrors.sh`). The
+newest entry says `unreleased` until `make release` publishes it and dates it
+(see the README's Releasing section).
 
 ## Package 0.2.4-alpha - unreleased: video timelines
 

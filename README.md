@@ -4,7 +4,7 @@ Standards and schema for a real-time program logistics description markup langua
 
 ## Version Information
 
-- **Current Version**: 0.1.0
+- **Package Version**: the `version` in `pyproject.toml`; releases are listed in the [CHANGELOG](CHANGELOG.md)
 - **Program Schema Version**: 0.3.0-alpha (0.2.0-alpha still shipped; see [CHANGELOG](CHANGELOG.md))
 
 ## Overview
@@ -644,6 +644,28 @@ shown on a public page; confirmed times become a video record.
 ```bash
 python -m pytest -q tests/
 ```
+
+## Releasing
+
+The pull request that changes the schemas also chooses the version. It sets
+`version` in `pyproject.toml` and `__version__` in
+`src/rhylthyme_spec/__init__.py`, and adds a
+`## Package <version> - unreleased` entry at the top of `CHANGELOG.md`. Once it
+is merged, with a PyPI token in `~/.pypirc`:
+
+```bash
+make release              # publish what's on origin/main
+DRY_RUN=1 make release    # build and test it, publish nothing
+```
+
+This builds the package from a temporary checkout of `origin/main`, so your
+branch and uncommitted files don't matter. It installs the wheel in a throwaway
+virtualenv, runs the tests against it, and asks once before publishing. It then
+dates the CHANGELOG entry in a `Release <version>` commit on `main`, pushes that
+commit with a `v<version>` tag (`v0.2.4a0` for 0.2.4-alpha), and uploads to
+PyPI. Finally it fast-forwards your local `main` when it can. Packages that
+need the new version, such as `rhylthyme`, raise their `rhylthyme-spec>=`
+requirement in their own pull requests.
 
 ## Contributing
 
