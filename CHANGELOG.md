@@ -5,7 +5,7 @@ here. Schema files are never edited in place once shipped; a new version is a
 new file, byte-copied to `rhylthyme-server/static/schema/` and
 `rhylthyme-mcp/static/schema/` (checked by `tools/check_mirrors.sh`).
 
-## Package 0.2.4-alpha - unreleased: video timelines
+## Package 0.2.4-alpha - 2026-11-06: video timelines
 
 An additive amendment to the shipped runs schema, made in place on the same
 terms as 0.2.1-alpha (new enum values only, so every record that was valid
