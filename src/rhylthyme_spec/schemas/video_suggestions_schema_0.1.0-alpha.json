@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "W3C Time Ontology (OWL-Time) alignment: https://www.w3.org/TR/owl-time/ — namespace prefix time: = http://www.w3.org/2006/time#. Each present step is a proposed time:ProperInterval on the video's media timeline; every time:Instant is a number of seconds from the video's first frame, as in a run record whose runtime.clockMode is media.",
+  "title": "Rhylthyme Video Suggestions Schema",
+  "description": "Step times in one video proposed by a model or a baseline (a proposer) for a person to confirm: one document per proposer run over one video and one program version. Suggestions are never shown on a public page. Confirmed times become a run record with runtime.clockMode media and endedBy observer.",
+  "type": "object",
+  "required": [
+    "programVersion",
+    "video",
+    "proposer",
+    "createdAt",
+    "steps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Version of the video suggestions schema this document conforms to",
+      "default": "0.1.0-alpha"
+    },
+    "programVersion": {
+      "type": "string",
+      "description": "Content hash of the program whose steps are suggested, as in a run record's programVersion: 'sha256:' followed by the hex SHA-256 of the canonical JSON (keys sorted by code point, no whitespace, UTF-8, integral numbers written without a fractional part)",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "video": {
+      "type": "object",
+      "description": "The video the times refer to",
+      "required": ["sha256", "durationSeconds"],
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "description": "Lowercase hex SHA-256 of the video file's bytes. No 'sha256:' prefix: the key names the algorithm",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Length of the video's media timeline in seconds"
+        }
+      }
+    },
+    "proposer": {
+      "type": "object",
+      "description": "What made the suggestions",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the proposer, e.g. timer-reanchored"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Version of the proposer"
+        },
+        "settings": {
+          "type": "object",
+          "description": "Settings the proposer ran with, such as a model, a frame interval and size, or the hints it was given. Free-form",
+          "additionalProperties": true
+        }
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC instant at which the document was made (ISO 8601)"
+    },
+    "steps": {
+      "type": "array",
+      "description": "Suggested steps. A step left out has no suggestion. A stepId may appear more than once when the proposer thinks the step happened more than once. Repeats of a stepId are occurrences ordered by start: for a step with replicates they fill its instances in order, and occurrences beyond the step's instance count (one for a step without replicates) are extra intervals",
+      "items": { "$ref": "#/definitions/stepSuggestion" }
+    }
+  },
+  "definitions": {
+    "seconds": {
+      "type": "number",
+      "minimum": 0,
+      "$comment": "A time:Instant expressed as a time:Duration from the video's first frame with time:unitType time:unitSecond"
+    },
+    "stepSuggestion": {
+      "type": "object",
+      "$comment": "start and end are not compared with each other or with video.durationSeconds here; draft-07 cannot express it, so consumers check them",
+      "required": ["stepId", "present"],
+      "additionalProperties": false,
+      "properties": {
+        "stepId": {
+          "type": "string",
+          "description": "The step's id as authored in the program"
+        },
+        "present": {
+          "type": "boolean",
+          "description": "true: the proposer thinks the step happened, between start and end; false: it thinks the step did not happen, and start and end are omitted"
+        },
+        "start": {
+          "$ref": "#/definitions/seconds",
+          "description": "Proposed time:hasBeginning, seconds of the video's media timeline (0 is its first frame). Required when present is true, forbidden when false"
+        },
+        "end": {
+          "$ref": "#/definitions/seconds",
+          "description": "Proposed time:hasEnd, seconds of the video's media timeline (0 is its first frame). Required when present is true, forbidden when false"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "The proposer's confidence in this suggestion, from 0 (none) to 1 (certain). Optional: a proposer without a confidence omits it"
+        }
+      },
+      "if": {
+        "required": ["present"],
+        "properties": { "present": { "const": true } }
+      },
+      "then": {
+        "required": ["start", "end"]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            { "required": ["start"] },
+            { "required": ["end"] }
+          ]
+        }
+      }
+    }
+  }
+}
