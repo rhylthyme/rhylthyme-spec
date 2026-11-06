@@ -22,6 +22,7 @@ Rhylthyme is a JSON-based markup language for describing real-time programs that
 - Manual triggers and indefinite durations
 - Step replicates with per-instance triggers (`instances: "each" | "all" | "any"`) and in-flight limits (`replicates.maxInFlight`), schema 0.3.0-alpha
 - Step alerts (`alerts`): reminders anchored to a step's start or end, package 0.2.3-alpha, both program schemas
+- Video records (run records timed in a video's media timeline) and video suggestions (proposed step times for a person to confirm)
 
 ## Schema Structure
 
@@ -493,6 +494,7 @@ The schema enforces:
 - `schemas/program_schema_0.2.0-alpha.json` - Program schema (previous; still accepted)
 - `schemas/environment_schema_0.1.0-alpha.json` - Environment schema
 - `schemas/runs_schema_0.1.0-alpha.json` - Run record schema (execution history; `get_runs_schema_path()`)
+- `schemas/video_suggestions_schema_0.1.0-alpha.json` - Suggested step times in a video (`get_video_suggestions_schema_path()`; see [Video suggestions](#video-suggestions))
 
 From Python:
 
@@ -567,7 +569,75 @@ unreadable offset. User documentation:
 
 ## Run Records
 
-A run record is written by a runtime after a program has been executed (`schemas/runs_schema_0.1.0-alpha.json`, `get_runs_schema_path()`). It is a separate document from the program so history never rewrites the plan: `runId`, `programId`, `programVersion` (`sha256:` of the program's canonical JSON), `runtime {kind, version, clockMode, speed}`, `environmentId`, `startedAt`, `endedAt`, `outcome` (`completed | aborted | abandoned`), `context` (program metadata plus `userTags`), and one `steps[]` entry per expanded step with `planned {start, end, durationType, ...}` frozen at run start, `actual {start, end}`, `endedBy` (`executor | timer | trigger | abort`), `triggerFiredAt`, `waitedOn`, `pausedSeconds` and optional `notes`. All step times are seconds from `startedAt`.
+A run record is written by a runtime after a program has been executed (`schemas/runs_schema_0.1.0-alpha.json`, `get_runs_schema_path()`). It is a separate document from the program so history never rewrites the plan: `runId`, `programId`, `programVersion` (`sha256:` of the program's canonical JSON), `runtime {kind, version, clockMode, speed}`, `environmentId`, `startedAt`, `endedAt`, `outcome` (`completed | aborted | abandoned`), `context` (program metadata plus `userTags`), and one `steps[]` entry per expanded step with `planned {start, end, durationType, ...}` frozen at run start, `actual {start, end}`, `endedBy` (`executor | timer | trigger | abort | instrument | skipped | annotation | observer`), `triggerFiredAt`, `waitedOn`, `pausedSeconds` and optional `notes`. All step times are seconds from `startedAt`, except in media records.
+
+### Video records
+
+A run record can also describe a video: `runtime.kind` is `video` (made by a
+dataset converter or the marking screen) and `runtime.clockMode` is `media`.
+Every time is then seconds of the video's own media timeline, and program
+time 0 is the video's first frame. `startedAt` is when recording began if
+known, otherwise when the timeline was made. A step that never happened has
+no `actual`; `outcome: completed` means the video shows the procedure to its
+end. Steps timed from a dataset's labels end with `endedBy: annotation`, and
+the dataset's error tags go in `notes`; steps a person marked while watching,
+including confirming a suggestion, end with `endedBy: observer`. Duration
+predictions and calibration read only `wall` records, so media records stay
+out of them.
+
+```json
+{
+  "runId": "2026-11-05T00:00:00Z-1c7e",
+  "programId": "video-recipe",
+  "programVersion": "sha256:…",
+  "runtime": {"kind": "video", "version": "0.1.0", "clockMode": "media", "speed": 1},
+  "startedAt": "2026-11-05T00:00:00Z",
+  "outcome": "completed",
+  "steps": [
+    {"stepId": "n1", "planned": {"start": 0, "end": 60, "durationType": "fixed", "seconds": 60},
+     "actual": {"start": 3.37, "end": 71.04}, "endedBy": "annotation"},
+    {"stepId": "n2", "planned": {"start": 60, "end": 90, "durationType": "fixed", "seconds": 30}}
+  ]
+}
+```
+
+## Video suggestions
+
+A video suggestions document (`schemas/video_suggestions_schema_0.1.0-alpha.json`,
+`get_video_suggestions_schema_path()`) holds step times in one video proposed
+by a model or a baseline (a proposer) for a person to confirm. It is never
+shown on a public page; confirmed times become a video record.
+
+```json
+{
+  "schemaVersion": "0.1.0-alpha",
+  "programVersion": "sha256:…",
+  "video": {"sha256": "…", "durationSeconds": 1234.5},
+  "proposer": {"name": "timer-reanchored", "version": "0.1.0", "settings": {}},
+  "createdAt": "2026-11-05T00:00:00Z",
+  "steps": [
+    {"stepId": "n3", "present": true, "start": 12.0, "end": 80.5, "confidence": 0.4},
+    {"stepId": "n4", "present": false}
+  ]
+}
+```
+
+- `programVersion`, `video`, `proposer` (`name`, `version`), `createdAt` and
+  `steps` are required; `schemaVersion`, `proposer.settings` (free-form) and
+  `confidence` are optional.
+- `programVersion` is `sha256:` and 64 lowercase hex digits, as in a run
+  record. `video.sha256` is the bare 64-digit lowercase hex SHA-256 of the
+  video file, with no prefix.
+- `start` and `end` are seconds of the video's media timeline (0 is its first
+  frame). They are required when `present` is true and forbidden when it is
+  false (the proposer thinks the step did not happen). The schema does not
+  compare `start` with `end` or with `durationSeconds`; consumers check those.
+- `confidence` is a number from 0 to 1.
+- A step left out has no suggestion; a `stepId` may appear more than once
+  when the proposer thinks the step happened more than once. Repeats are
+  occurrences ordered by start: for a step with replicates they fill its
+  instances in order, and occurrences beyond the step's instance count (one
+  for a step without replicates) are extra intervals.
 
 ## Tests
 

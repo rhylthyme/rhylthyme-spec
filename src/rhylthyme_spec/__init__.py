@@ -5,7 +5,7 @@ Rhylthyme Specifications Package
 This package provides JSON schemas and specifications for Rhylthyme programs and environments.
 """
 
-__version__ = "0.2.3-alpha"
+__version__ = "0.2.4-alpha"
 __author__ = "Rhylthyme Team"
 __description__ = "JSON schemas and specifications for Rhylthyme programs and environments"
 
@@ -33,4 +33,8 @@ def get_runs_schema_path():
     """Get the path to the run record schema (execution history)."""
     return get_schema_path('runs_schema_0.1.0-alpha.json')
 
-__all__ = ['get_schema_path', 'get_program_schema_path', 'get_environment_schema_path', 'get_runs_schema_path', 'PROGRAM_SCHEMA_VERSIONS'] 
+def get_video_suggestions_schema_path():
+    """Get the path to the video suggestions schema (proposed step times in a video)."""
+    return get_schema_path('video_suggestions_schema_0.1.0-alpha.json')
+
+__all__ = ['get_schema_path', 'get_program_schema_path', 'get_environment_schema_path', 'get_runs_schema_path', 'get_video_suggestions_schema_path', 'PROGRAM_SCHEMA_VERSIONS']

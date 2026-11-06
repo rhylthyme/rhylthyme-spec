@@ -5,6 +5,38 @@ here. Schema files are never edited in place once shipped; a new version is a
 new file, byte-copied to `rhylthyme-server/static/schema/` and
 `rhylthyme-mcp/static/schema/` (checked by `tools/check_mirrors.sh`).
 
+## Package 0.2.4-alpha - unreleased: video timelines
+
+An additive amendment to the shipped runs schema, made in place on the same
+terms as 0.2.1-alpha (new enum values only, so every record that was valid
+stays valid), and a new document type for suggested step times in a video.
+
+### Added
+- Runs schema 0.1.0-alpha: `runtime.kind` value `video` (a record made from a
+  video by a dataset converter or the marking screen); `runtime.clockMode`
+  value `media` (every time is seconds of the video's own media timeline, and
+  program time 0 is the video's first frame); `endedBy` values `annotation`
+  (a dataset label) and `observer` (a person marking while watching,
+  including confirming a suggestion). The descriptions say what a media
+  record means: `startedAt` is when recording began if known, otherwise when
+  the timeline was made; a step that never happened has no `actual`;
+  `outcome: completed` means the video shows the procedure to its end; a
+  dataset's error tags go in the step's `notes`. Duration predictions and
+  calibration read only `wall` records, so media records stay out of them.
+- `video_suggestions_schema_0.1.0-alpha.json`: step times in one video
+  proposed by a model or baseline for a person to confirm.
+  `{schemaVersion?, programVersion, video {sha256, durationSeconds}, proposer
+  {name, version, settings?}, createdAt, steps: [{stepId, present, start?,
+  end?, confidence?}]}`. `programVersion` has the runs schema's
+  `sha256:<64 hex>` form; `video.sha256` is the bare lowercase hex digest of
+  the file. `start` and `end` are seconds of the video's media timeline,
+  required when `present` is true and forbidden when it is false;
+  `confidence` is 0 to 1. A `stepId` may repeat (a step proposed more than
+  once).
+- Python: `get_video_suggestions_schema_path()`.
+- Tests: video, media, annotation and observer records validate; unknown
+  values still fail; suggestions documents validate and bad ones fail.
+
 ## Package 0.2.3-alpha - 2026-10-10: step alerts
 
 A third additive amendment to the shipped program schemas, made in place on
